@@ -1,5 +1,32 @@
 const path = require('path');
-let posts = require('../db.js')
+const fs = require('fs');
+let posts = require('../db.json');
+
+const createSlug = (title) => {
+    // Imposto uno slug base dal titolo del post rimuovendo eventuali spazi e trasformandolo in minuscolo
+    const baseSlug = title.replaceAll(' ', '-').toLowerCase();
+
+    // Recupero tutti gli slug presenti nel db
+    const slugList = posts.map((post) => post.slug);
+
+    let counter = 1;
+
+    let slug = baseSlug;
+
+    // Controllo se lo slug esiste già
+    while (slugList.includes(slug)) {
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+    }
+    return slug;
+}
+
+const updatePosts = (nuoviPost) => {
+    const filePath = path.join(__dirname, '../db.json');
+
+    fs.writeFileSync(filePath, JSON.stringify(nuoviPost));
+    posts = nuoviPost;
+}
 
 // index
 const index = (req, res) => {
@@ -77,14 +104,34 @@ const show = (req, res) => {
 
 // create
 const create = (req, res) => {
-    res.format({
-        html: () => {
-            res.send('<h1>Creazione nuovo post</h1>');
-        },
-        default: () => {
-            res.status(406).send('Errore, impossibile creare nuovo post');
-        }
-    });
+    const { title, content, tags } = req.body;
+
+    if (!title || !content || !tags) {
+        return res.status(400).send('Dati mancanti.');
+    }
+
+    const slug = createSlug(title);
+
+    const newPost = {
+        title,
+        content,
+        tags,
+        slug
+    }
+
+    // Aggiorno la lista dei post sul db
+    updatePosts([...posts, newPost]);
+
+    // res.format({
+    //     html: () => {
+    //         res.redirect(`/posts/${slug}`);
+    //     },
+    //     default: () => {
+    //         res.json(newPost);
+    //     },
+    // })
+    console.log(newPost);
+    res.end();
 }
 
 // download immagine
@@ -94,7 +141,6 @@ const download = (req, res) => {
     const filePath = path.join(__dirname, `../public/imgs/posts/${postRichiesto.image}`);
     res.download(filePath);
 }
-
 
 module.exports = {
     index,

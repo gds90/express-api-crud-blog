@@ -7,7 +7,7 @@ const postsController = require("../controllers/posts.js");
 // Rotte
 router.get('/', postsController.index);
 
-router.get('/create', postsController.create);
+router.post('/create', postsController.create);
 
 router.get('/:slug', postsController.show);
 
