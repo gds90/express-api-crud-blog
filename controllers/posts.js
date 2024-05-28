@@ -38,25 +38,52 @@ const deletePostImage = (fileName) => {
 const index = (req, res) => {
     res.format({
         html: () => {
-            let html = '<main>';
-            posts.forEach((post) => {
-                html += `
-                <article>
-                    <a href="/posts/${post.slug}"><h2>${post.title}</h2></a>
-                    <img width="500" src="/imgs/posts/${post.image}" alt="${post.title}">
-                    <p>${post.content}</p>
-                    <h4>Tags:</h4>
+            fs.readFile(path.join(__dirname, '../views/index.html'), 'utf8', (err, html) => {
+                if (err) {
+                    res.status(500).send('Errore nel caricamento della pagina richiesta.');
+                    return;
+                }
+
+                let postsHtml = '';
+                posts.forEach(post => {
+                    let tagsHtml = '';
+                    post.tags.forEach(tag => {
+                        tagsHtml += `<span class="tag">#${tag.toLowerCase().replace(' ', '-')} </span>`;
+                    });
+
+                    postsHtml += `
+                        <article>
+                            <a href="/posts/${post.slug}"><h2>${post.title}</h2></a>
+                            <img width="500" src="/imgs/posts/${post.image}" alt="${post.title}">
+                            <p>${post.content}</p>
+                            <h4>Tags:</h4>
+                            ${tagsHtml}
+                            <hr>
+                        </article>
                     `;
-                post.tags.forEach(tag => {
-                    html += `<span class="tag">#${tag.toLowerCase().replaceAll(' ', '-')} </span>`;
                 });
-                html += `
-                </article>
-                </a>
-                <hr>`;
+
+                html = html.replace('{{POSTS}}', postsHtml);
+                res.send(html);
             });
-            html += '</main>';
-            res.send(html);
+            // let html = '<main>';
+            // posts.forEach((post) => {
+            //     html += `
+            //     <article>
+            //         <a href="/posts/${post.slug}"><h2>${post.title}</h2></a>
+            //         <img width="500" src="/imgs/posts/${post.image}" alt="${post.title}">
+            //         <p>${post.content}</p>
+            //         <h4>Tags:</h4>
+            //         `;
+            //     post.tags.forEach(tag => {
+            //         html += `<span class="tag">#${tag.toLowerCase().replaceAll(' ', '-')} </span>`;
+            //     });
+            //     html += `
+            //     </article>
+            //     </a>
+            //     <hr>`;
+            // });
+            // html += '</main>';
         },
         json: () => {
             res.json({
