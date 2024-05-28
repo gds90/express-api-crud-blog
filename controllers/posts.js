@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+
 let posts = require('../db.json');
 
 const createSlug = (title) => {
@@ -26,6 +27,11 @@ const updatePosts = (nuoviPost) => {
 
     fs.writeFileSync(filePath, JSON.stringify(nuoviPost));
     posts = nuoviPost;
+}
+
+const deletePostImage = (fileName) => {
+    const filePath = path.join(__dirname, '../public/imgs/posts', fileName);
+    fs.unlinkSync(filePath);
 }
 
 // index
@@ -106,8 +112,15 @@ const show = (req, res) => {
 const create = (req, res) => {
     const { title, content, tags } = req.body;
 
-    if (!title || !content || !tags) {
+    if (!title || title.replaceAll('/', '').trim().length === 0 || !content || !tags) {
+        if (req.file) {
+            deletePostImage(req.file.filename);
+        }
+
         return res.status(400).send('Dati mancanti.');
+    } else if (!req.file || !req.file.mimetype.includes('image')) {
+        deletePostImage(req.file.filename);
+        return res.status(400).send('Immagine mancante o non valida.');
     }
 
     const slug = createSlug(title);
@@ -116,22 +129,50 @@ const create = (req, res) => {
         title,
         content,
         tags,
+        image: req.file.filename,
         slug
     }
 
     // Aggiorno la lista dei post sul db
     updatePosts([...posts, newPost]);
 
-    // res.format({
-    //     html: () => {
-    //         res.redirect(`/posts/${slug}`);
-    //     },
-    //     default: () => {
-    //         res.json(newPost);
-    //     },
-    // })
+    res.format({
+        html: () => {
+            res.redirect(`/posts/${slug}`);
+        },
+        default: () => {
+            res.json(newPost);
+        },
+    })
+
     console.log(newPost);
     res.end();
+}
+
+// delete
+const destroy = (req, res) => {
+    const slug = req.params.slug;
+    const postDaEliminare = posts.find(post => post.slug === slug);
+
+    if (!postDaEliminare) {
+        return res.status(404).send(`Non esiste un post con slug: "${slug}"`)
+    }
+
+    // elimino la foto del post
+    deletePostImage(postDaEliminare.image);
+
+    // elimino il post dalla lista dei post
+    updatePosts(posts.filter(post => post.slug !== postDaEliminare.slug));
+
+
+    res.format({
+        html: () => {
+            res.redirect(`/posts`);
+        },
+        default: () => {
+            res.send(`Post ${postDaEliminare.title} eliminato con successo!`);
+        },
+    })
 }
 
 // download immagine
@@ -146,5 +187,6 @@ module.exports = {
     index,
     show,
     create,
+    destroy,
     download
 }

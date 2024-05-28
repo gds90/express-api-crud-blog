@@ -1,7 +1,10 @@
 require('dotenv').config();
 const express = require('express');
-const app = express();
+const errorsFormatter = require('./middlewares/errorsFormatter.js');
+
 const port = process.env.PORT || 3000;
+
+const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -17,6 +20,8 @@ app.use("/posts", postsRouter);
 app.get("/", (req, res) => {
     res.redirect("/posts");
 });
+
+app.use(errorsFormatter);
 
 // Server in ascolto
 app.listen(port, () => {
