@@ -1,19 +1,15 @@
 require('dotenv').config();
 const express = require('express');
 const errorsFormatter = require('./middlewares/errorsFormatter.js');
-
 const port = process.env.PORT || 3000;
 
 const app = express();
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const postsRouter = require("./routers/posts.js");
 
 // Asset statico per la cartella public
 app.use(express.static('public'));
 
 // Post router
-const postsRouter = require("./routers/posts.js");
 app.use("/posts", postsRouter);
 
 // redirect 

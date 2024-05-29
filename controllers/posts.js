@@ -139,7 +139,7 @@ const show = (req, res) => {
 const create = (req, res) => {
     const { title, content, tags } = req.body;
 
-    if (!title || title.replaceAll('/', '').trim().length === 0 || !content || !tags) {
+    if (!title || title.replaceAll('/', '').trim().length === 0 || !content || !tags || !Array.isArray(tags) || tags.length === 0) {
         if (req.file) {
             deletePostImage(req.file.filename);
         }
@@ -178,13 +178,7 @@ const create = (req, res) => {
 
 // delete
 const destroy = (req, res) => {
-    const slug = req.params.slug;
-    const postDaEliminare = posts.find(post => post.slug === slug);
-
-    if (!postDaEliminare) {
-        return res.status(404).send(`Non esiste un post con slug: "${slug}"`)
-    }
-
+    const { postDaEliminare } = req;
     // elimino la foto del post
     deletePostImage(postDaEliminare.image);
 
